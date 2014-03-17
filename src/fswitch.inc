@@ -91,8 +91,9 @@ __real_mode:
 	and eax, 0x7FFFFFFe	; disable paging bit & enable 16-bit pmode
 	mov cr0, eax
  
-	jmp 0:__real_mode	; perform Far jump to set CS
+	jmp 0:__real_mode_jump  ; perform Far jump to set CS
  
+__real_mode_jump:
 	mov sp, 0x8000		; pick a stack pointer
 	mov ax, 0		; reset segment registers to 0
 	mov ds, ax              ;
