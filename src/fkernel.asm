@@ -26,11 +26,11 @@ kernel_loop:
 	cmp  ah,0Eh             ; is it a `Backspace` character?
 	je   kernel_input_backspace
 
-	cmp  al,0Dh             ; is it a `Enter` character?
-	je   kernel_exec
-
 	mov  [buffer+si],al
 	inc  si
+
+	cmp  al,0Dh             ; is it a `Enter` character?
+	je   kernel_exec
 
 	call _print_char
 	call _cursor_move_right
@@ -44,10 +44,10 @@ kernel_exec:
 
 kernel_exec_switch:
 	mov  di,buffer
-	mov  si,msg_sysinfo
-	mov  cx,msg_sysinfo_size
+	mov  si,msg_switch
+	mov  cx,msg_switch_size
 
-	rep  cmpsb
+	repe cmpsb
 	jne  kernel_loop
 
 	call _switch
@@ -63,12 +63,12 @@ kernel_input_backspace:
 
 	call _cursor_move_left
 
-	mov  al,20h      ;вместо уже напечатанного символа выводим пробел
-	mov  [buffer + si],al ;стираем символ в строке
+	mov  al,20h            ; space instead of curren symbol
+	mov  [buffer + si],al  ; erase it
 
 	call _print_char
 
-	dec  si          ;уменьшаем кол-во напечатанных символов
+	dec  si                ; dec it
 	jmp  kernel_loop
 
 ; ====================================== ;
@@ -87,10 +87,7 @@ include 'fswitch.inc'
 msg_input db 'Input the command...',0
 msg_input_size = $ - msg_input
 
-msg_sysinfo db 'switch',0
-msg_sysinfo_size = $ - msg_sysinfo
-
-msg_protected db 'protected',0
-msg_protected_size = $ - msg_protected
+msg_switch db 'switch',13
+msg_switch_size = $ - msg_switch
 
 buffer db 24 dup(?) ; buffer

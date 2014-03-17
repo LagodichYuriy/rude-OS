@@ -48,10 +48,26 @@ DATA_DESC:
     db 0                        ; base low
     db 10010010b                ; access
     db 11001111b                ; granularity
+    db 0                        ; base high4
+
+DATA16_DESC:
+    dw 0xFFFF                   ; data descriptor
+    dw 0                        ; limit low
+    db 0                        ; base low
+    db 10010010b                ; access
+    db 01000000b                ; granularity
+    db 0                        ; base high
+
+CODE16_DESC:
+    dw 0xFFFF                   ; limit low
+    dw 0                        ; base low
+    db 0                        ; base middle
+    db 10011010b                ; access
+    db 00000000b                ; granularity
     db 0                        ; base high
 
 gdtr:
-    limit dw 24                 ; length of GDT
+    limit dw 48                 ; length of GDT
     base  dd NULL_DESC          ; base of GDT
 
 
@@ -63,7 +79,10 @@ gdtr:
 use32
 
 _protected_mode:
-	mov  edi,0xb8000        ; direct VGA address (text-mode)
+	mov ax,DATA_DESC - NULL_DESC
+	mov ds,ax
+	mov ss,ax
+	mov edi,0xb8000         ; direct VGA address (text-mode)
 
 	mov  eax,msg_prot       ; save message adress to `eax`
 	call __print_message    ; print a message
@@ -76,14 +95,22 @@ _protected_mode:
 ; ====================================== ; 
 
 __real_mode:
-	cli			; Disable interrupts.
+
+	; perform Far jump to set CS
+	jmp (CODE16_DESC - NULL_DESC):__pmode16
+use16
+
+__pmode16:
+
+	cli			; disable interrupts.
  
 	; need 16-bit Protected Mode GDT entries
-	mov eax,gdtr            ; 16-bit Protected Mode data selector.
+	mov ax,DATA16_DESC - NULL_DESC ; 16-bit Protected Mode data selector
 	mov ds,ax
 	mov es,ax
 	mov fs,ax
 	mov gs,ax
+	mov ss,ax
 
 	; disable paging (we need everything to be 1:1 mapped).
 	mov eax, cr0            ; copy `cr0` in `eax`
@@ -100,7 +127,15 @@ __real_mode_jump:
 	mov es, ax              ;
 	mov fs, ax              ;
 	mov gs, ax              ;
+	mov ss, ax
 	lidt [idtr]             ; define a new interrupt table
+
+	call _screen_clean      ; clean the screen
+	call _cursor_reset      ; reset cursor position
+
+	mov  bp,msg_rm          ; message address
+	mov  cx,msg_rm_size     ; message length
+	call _print             ; print message on the screen
 
 	sti			; restore interrupts
 
@@ -109,6 +144,7 @@ __real_mode_loop:
 	jmp __real_mode_loop
 
 
+use32
 
 ; ====================================== ;
 ;       ↓ Keyboard loop procedure ↓      ;
@@ -196,6 +232,8 @@ __print_letter:
 
 msg_prot db 'Protected mode enabled (CR0 bit PE=1)',0
 
+msg_rm db 'Back in real mode'
+msg_rm_size = $ - msg_rm
 
 idtr:
 	dw 0x3ff		; 256 entries, 4b each = 1K

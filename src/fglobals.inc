@@ -164,7 +164,7 @@ _load_kernel:
 	mov  cl,02h     ; starting sector           - 2
 	mov  dh,0       ; HDD head number           - 0
 	mov  dl,80h     ; HDD itself                - 80h
-	mov  al,01h     ; number of sectors to read - 1
+	mov  al,02h     ; number of sectors to read - 2
 	mov  ah,02h     ; read sectors from drive   - 2h
 	int  13h        ; shorthand for BIOS interrupt call
 	jmp  0000:0500h ; jump to kernel
