@@ -1,4 +1,4 @@
 rude-OS
 =======
 
-FASM OS example (Bootloader + Protected Mode + Shell)
+FASM OS example (bootloader + protected mode + shell)
